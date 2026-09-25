@@ -2629,7 +2629,7 @@
             }
 
             // AUTO-SAVE TO HISTORY ONLY IF 'ЗАНЕСТИ В ІСТОРІЮ' WAS CLICKED
-
+            // AUTO-SAVE TO HISTORY ONLY IF 'ЗАНЕСТИ В ІСТОРІЮ' WAS CLICKED
             if (accessToken && shouldSaveToHistory) {
                 let savedAny = false;
                 const saveTest = (testName, scoresObj, totalScore) => {
@@ -2844,6 +2844,8 @@
                     } 
                 }
             });
+            
+            updateHistoryTable(); // Sync table filtering
         }
 
         function updateHistoryTable() {
@@ -2891,4 +2893,4 @@
         }
     </script>
 </body>
-</html> 
+</html>

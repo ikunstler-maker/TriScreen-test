@@ -16,9 +16,7 @@
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script src="https://apis.google.com/js/api.js"></script>
     <!-- Chart.js для графіків -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-        <script>
     <script>
         // Force Dark Theme by Default
         if (!localStorage.getItem('theme')) {
@@ -2631,12 +2629,17 @@
             }
 
             // AUTO-SAVE TO HISTORY ONLY IF 'ЗАНЕСТИ В ІСТОРІЮ' WAS CLICKED
+
             if (accessToken && shouldSaveToHistory) {
                 let savedAny = false;
                 const saveTest = (testName, scoresObj, totalScore) => {
+                    // ЗБЕРІГАЄМО З ТОЧНИМ ЧАСОМ, ЩОБ МОЖНА БУЛО ЗАНОСИТИ КІЛЬКА РАЗІВ НА ДЕНЬ
                     const entryDate = dateVal !== "Не вказано" ? dateVal : new Date().toISOString().split('T')[0];
-                    testHistory = testHistory.filter(item => !(item.test === testName && item.date === entryDate));
-                    testHistory.push({ id: Date.now().toString() + Math.random().toString(36).substr(2, 5), date: entryDate, test: testName, total: totalScore, answers: scoresObj });
+                    const entryTime = new Date().toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' });
+                    const fullDateStr = `${entryDate} ${entryTime}`;
+                    
+                    // ВИДАЛЕНО ФІЛЬТР, ЯКИЙ ПЕРЕЗАПИСУВАВ ДАНІ ЗА ОДИН ДЕНЬ
+                    testHistory.push({ id: Date.now().toString() + Math.random().toString(36).substr(2, 5), date: fullDateStr, test: testName, total: totalScore, answers: scoresObj });
                     savedAny = true;
                 };
 
@@ -2773,18 +2776,40 @@
         function updateChartsOnly() {
             if (typeof Chart === 'undefined') return;
             const test = document.getElementById('history-test-filter').value;
-            let data = testHistory.filter(i => i.test === test).sort((a, b) => new Date(a.date) - new Date(b.date));
+            let data = testHistory.filter(i => i.test === test).sort((a, b) => {
+                // Парсимо дату з часом для правильного сортування
+                const parseDate = (dStr) => {
+                    const parts = dStr.split(' ');
+                    if (parts.length > 1) return new Date(`${parts[0]}T${parts[1]}`);
+                    return new Date(parts[0]);
+                };
+                return parseDate(a.date) - parseDate(b.date);
+            });
+            
             if (currentTimeFilter !== 'all') {
                 const limit = new Date();
                 if(currentTimeFilter === 'month') limit.setMonth(limit.getMonth() - 1);
                 if(currentTimeFilter === 'year') limit.setFullYear(limit.getFullYear() - 1);
-                data = data.filter(i => new Date(i.date) >= limit);
+                data = data.filter(i => {
+                    const parts = i.date.split(' ');
+                    return new Date(parts[0]) >= limit;
+                });
             }
             const labels = data.map(d => d.date);
             const isDark = document.documentElement.classList.contains('dark');
             const textColor = isDark ? '#94a3b8' : '#64748b', gridColor = isDark ? '#334155' : '#e2e8f0';
 
-            // Total Chart
+            // Custom Y-axis labels function
+            const yAxisCallback = function(value) {
+                if (test === 'GAD-7') { if (value >= 15) return value + ' (Високий)'; if (value >= 10) return value + ' (Помірний)'; if (value >= 5) return value + ' (Легкий)'; return value + ' (Мінімальний)'; }
+                if (test === 'PCL-5') { if (value >= 50) return value + ' (Високий)'; if (value >= 33) return value + ' (Підвищений)'; if (value >= 21) return value + ' (Помірний)'; if (value >= 11) return value + ' (Легкий)'; return value + ' (Мінімальний)'; }
+                if (test === 'PHQ-9') { if (value >= 20) return value + ' (Важкий)'; if (value >= 15) return value + ' (Виражений)'; if (value >= 10) return value + ' (Помірний)'; if (value >= 5) return value + ' (Низький)'; return value + ' (Мінімальний)'; }
+                if (test === 'DES-II') { if (value >= 30) return value + ' (Високий)'; return value + ' (Мінімальний)'; }
+                if (test === 'LEC-5') { if (value >= 11) return value + ' (Високий)'; if (value >= 1) return value + ' (Помірний)'; return value + ' (Мінімальний)'; }
+                return value;
+            };
+
+            // Total Chart (Scatter style)
             const ctxTotal = document.getElementById('chart-total').getContext('2d');
             if (chartTotalInstance) chartTotalInstance.destroy();
             chartTotalInstance = new Chart(ctxTotal, {
@@ -2796,37 +2821,29 @@
                     plugins: { legend: { display: false } }, 
                     scales: { 
                         x: { ticks: { color: textColor }, grid: { color: gridColor } }, 
-                        y: { 
-                            ticks: { 
-                                color: textColor,
-                                callback: function(value) {
-                                    const test = document.getElementById('history-test-filter').value;
-                                    if (test === 'GAD-7') { if (value >= 15) return value + ' (Високий)'; if (value >= 10) return value + ' (Помірний)'; if (value >= 5) return value + ' (Легкий)'; return value + ' (Мінімальний)'; }
-                                    if (test === 'PCL-5') { if (value >= 50) return value + ' (Високий)'; if (value >= 33) return value + ' (Підвищений)'; if (value >= 21) return value + ' (Помірний)'; if (value >= 11) return value + ' (Легкий)'; return value + ' (Мінімальний)'; }
-                                    if (test === 'PHQ-9') { if (value >= 20) return value + ' (Важкий)'; if (value >= 15) return value + ' (Виражений)'; if (value >= 10) return value + ' (Помірний)'; if (value >= 5) return value + ' (Низький)'; return value + ' (Мінімальний)'; }
-                                    if (test === 'DES-II') { if (value >= 30) return value + ' (Високий)'; return value + ' (Мінімальний)'; }
-                                    if (test === 'LEC-5') { if (value >= 11) return value + ' (Високий)'; if (value >= 1) return value + ' (Помірний)'; return value + ' (Мінімальний)'; }
-                                    return value;
-                                }
-                            }, 
-                            grid: { color: gridColor }, 
-                            beginAtZero: true 
-                        } 
+                        y: { ticks: { color: textColor, callback: yAxisCallback }, grid: { color: gridColor }, beginAtZero: true } 
                     } 
                 }
             });
 
-            // Question Chart
+            // Question Chart (Scatter style for consistency)
             const qVal = document.getElementById('history-question-filter').value;
             const qScores = qVal === 'all' ? data.map(d => { const k = Object.keys(d.answers); return k.length ? k.reduce((acc, x) => acc + (d.answers[x]||0), 0)/k.length : 0; }) : data.map(d => d.answers[qVal] || 0);
             const ctxQ = document.getElementById('chart-question').getContext('2d');
             if (chartQuestionInstance) chartQuestionInstance.destroy();
             chartQuestionInstance = new Chart(ctxQ, {
-                type: 'bar',
-                data: { labels, datasets: [{ data: qScores, backgroundColor: '#f59e0b', borderRadius: 4 }] },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: textColor }, grid: { display: false } }, y: { ticks: { color: textColor }, grid: { color: gridColor }, beginAtZero: true } } }
+                type: 'line', // Changed to line with showLine: false to be scatter
+                data: { labels, datasets: [{ data: qScores, borderColor: '#f59e0b', backgroundColor: '#f59e0b', borderWidth: 0, fill: false, showLine: false, pointBackgroundColor: '#f59e0b', pointRadius: 6, pointHoverRadius: 8 }] },
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false, 
+                    plugins: { legend: { display: false } }, 
+                    scales: { 
+                        x: { ticks: { color: textColor }, grid: { color: gridColor } }, 
+                        y: { ticks: { color: textColor }, grid: { color: gridColor }, beginAtZero: true } 
+                    } 
+                }
             });
-            updateHistoryTable(); // Sync table filtering
         }
 
         function updateHistoryTable() {
@@ -2874,4 +2891,4 @@
         }
     </script>
 </body>
-</html>
+</html> 

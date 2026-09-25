@@ -2899,5 +2899,57 @@
             setTimeout(() => { document.getElementById('dashboard-summary').scrollIntoView({ behavior: 'smooth' }); }, 100);
         }
     </script>
+<!-- ФОРМА ЗВОРОТНОГО ЗВ'ЯЗКУ (КНОПКА ТА МОДАЛЬНЕ ВІКНО) -->
+    <!-- Плаваюча кнопка -->
+    <button onclick="toggleFeedbackModal()" class="fixed bottom-6 right-6 z-40 w-14 h-14 bg-sky-600 hover:bg-sky-500 text-white rounded-full shadow-lg hover:shadow-xl transition-all flex items-center justify-center text-2xl focus:outline-none print-only-hide" title="Залишити відгук">
+        💬
+    </button>
+
+    <!-- Модальне вікно -->
+    <div id="feedback-modal" class="fixed inset-0 z-[60] hidden bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 transition-opacity duration-300 opacity-0">
+        <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden border border-slate-200 dark:border-slate-800 flex flex-col transition-transform duration-300 transform scale-95" id="feedback-modal-content">
+            
+            <!-- Шапка модалки -->
+            <div class="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-800">
+                <h3 class="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                    <span>💬</span> Зворотний зв'язок
+                </h3>
+                <button onclick="toggleFeedbackModal()" class="text-slate-400 hover:text-rose-500 dark:hover:text-rose-400 transition p-1 bg-slate-100 dark:bg-slate-800 rounded-lg">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+
+            <!-- Контейнер для Google Form -->
+            <div class="w-full h-[60vh] sm:h-[500px] bg-slate-50 dark:bg-slate-950 relative overflow-hidden">
+                <iframe src="https://docs.google.com/forms/d/e/1FAIpQLSf9XsWw-BQ4PAkg6kD6YGbuslriCFWmcwCl2u6he-lIABUTSQ/viewform?embedded=true" width="100%" height="100%" frameborder="0" marginheight="0" marginwidth="0" class="absolute inset-0">Завантаження…</iframe>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Функція для плавного відкриття/закриття модального вікна
+        function toggleFeedbackModal() {
+            const modal = document.getElementById('feedback-modal');
+            const content = document.getElementById('feedback-modal-content');
+            
+            if (modal.classList.contains('hidden')) {
+                // Відкриваємо
+                modal.classList.remove('hidden');
+                // Мікрозатримка для активації CSS-анімації
+                setTimeout(() => {
+                    modal.classList.remove('opacity-0');
+                    content.classList.remove('scale-95');
+                }, 10);
+            } else {
+                // Закриваємо
+                modal.classList.add('opacity-0');
+                content.classList.add('scale-95');
+                // Чекаємо завершення анімації (300мс) перед приховуванням
+                setTimeout(() => {
+                    modal.classList.add('hidden');
+                }, 300);
+            }
+        }
+    </script>
 </body>
 </html>
